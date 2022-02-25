@@ -6,10 +6,25 @@ resource "aws_guardduty_detector" "guardduty" {
   finding_publishing_frequency = var.finding_publishing_frequency
 }
 
+data "aws_caller_identity" "current" {}
+
 #-----------------------------------------------------------------------------------------------------------------------
 # Add KMS Key for SNS Topic
 #-----------------------------------------------------------------------------------------------------------------------
 data "aws_iam_policy_document" "kms_key_iam_policy_document" {
+
+  /* Default policy to grant IAM root account full access to manage the key */
+  statement {
+    sid       = "Enable IAM User Permissions"
+    effect    = "Allow"
+    resources = ["*"]
+    actions   = ["kms:*"]
+
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+    }
+  }
 
   statement {
     sid = "Allow CWE to use the key"

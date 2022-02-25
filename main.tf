@@ -84,7 +84,7 @@ data "aws_iam_policy_document" "sns_topic_policy" {
     ]
     principals {
       type        = "Service"
-      identifiers = ["cloudwatch.amazonaws.com"]
+      identifiers = ["events.amazonaws.com"]
     }
     resources = [module.sns_topic[0].sns_topic.arn]
     effect    = "Allow"

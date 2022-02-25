@@ -7,6 +7,41 @@ resource "aws_guardduty_detector" "guardduty" {
 }
 
 #-----------------------------------------------------------------------------------------------------------------------
+# Add KMS Key for SNS Topic
+#-----------------------------------------------------------------------------------------------------------------------
+data "aws_iam_policy_document" "kms_key_iam_policy_document" {
+
+  statement {
+    sid = "Allow CWE to use the key"
+
+    principals {
+      identifiers = ["events.amazonaws.com"]
+      type        = "Service"
+    }
+    actions = [
+      "kms:Decrypt",
+      "kms:GenerateDataKey"
+    ]
+
+    resources = [
+      "*",
+    ]
+  }
+}
+
+module "kms_key" {
+  source  = "cloudposse/kms-key/aws"
+  version = "0.12.1"
+
+  name                    = "guardduty-sns"
+  description             = "KMS key for Guard Duty SNS Topic"
+  deletion_window_in_days = 10
+  enable_key_rotation     = true
+  alias                   = "alias/guardduty-sns"
+  policy                  = data.aws_iam_policy_document.kms_key_iam_policy_document.json
+}
+
+#-----------------------------------------------------------------------------------------------------------------------
 # Optionally configure Event Bridge Rules and SNS subscriptions
 # https://docs.aws.amazon.com/securityhub/latest/userguide/securityhub-cwe-integration-types.html
 # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/resource-based-policies-cwe.html#sns-permissions
@@ -17,8 +52,9 @@ module "sns_topic" {
   version = "0.20.1"
   count   = local.create_sns_topic ? 1 : 0
 
-  subscribers     = var.subscribers
-  sqs_dlq_enabled = false
+  subscribers       = var.subscribers
+  sqs_dlq_enabled   = false
+  kms_master_key_id = module.kms_key.key_id
 
   attributes = concat(module.this.attributes, ["guardduty"])
   context    = module.this.context

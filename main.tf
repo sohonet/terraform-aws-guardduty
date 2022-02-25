@@ -31,7 +31,7 @@ data "aws_iam_policy_document" "kms_key_iam_policy_document" {
 
 module "kms_key" {
   source  = "cloudposse/kms-key/aws"
-  version = "0.12.1"
+  version = "0.12.0"
 
   name                    = "guardduty-sns"
   description             = "KMS key for Guard Duty SNS Topic"

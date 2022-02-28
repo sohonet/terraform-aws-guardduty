@@ -6,6 +6,59 @@ resource "aws_guardduty_detector" "guardduty" {
   finding_publishing_frequency = var.finding_publishing_frequency
 }
 
+data "aws_caller_identity" "current" {}
+
+#-----------------------------------------------------------------------------------------------------------------------
+# Add KMS Key for SNS Topic
+#-----------------------------------------------------------------------------------------------------------------------
+data "aws_iam_policy_document" "kms_key_iam_policy_document" {
+  count = local.encryption_enabled ? 1 : 0
+
+  /* Default policy to grant IAM root account full access to manage the key */
+  statement {
+    sid       = "Enable IAM User Permissions"
+    effect    = "Allow"
+    resources = ["*"]
+    actions   = ["kms:*"]
+
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+    }
+  }
+
+  statement {
+    sid = "Allow CWE to use the key"
+
+    principals {
+      identifiers = ["events.amazonaws.com"]
+      type        = "Service"
+    }
+    actions = [
+      "kms:Decrypt",
+      "kms:GenerateDataKey"
+    ]
+
+    resources = [
+      "*",
+    ]
+  }
+}
+
+module "kms_key" {
+  count = local.encryption_enabled ? 1 : 0
+
+  source  = "cloudposse/kms-key/aws"
+  version = "0.11.0"
+
+  name                    = "guardduty-sns"
+  description             = "KMS key for Guard Duty SNS Topic"
+  deletion_window_in_days = 10
+  enable_key_rotation     = true
+  alias                   = "alias/guardduty-sns"
+  policy                  = data.aws_iam_policy_document.kms_key_iam_policy_document[0].json
+}
+
 #-----------------------------------------------------------------------------------------------------------------------
 # Optionally configure Event Bridge Rules and SNS subscriptions
 # https://docs.aws.amazon.com/securityhub/latest/userguide/securityhub-cwe-integration-types.html
@@ -17,8 +70,10 @@ module "sns_topic" {
   version = "0.20.1"
   count   = local.create_sns_topic ? 1 : 0
 
-  subscribers     = var.subscribers
-  sqs_dlq_enabled = false
+  subscribers        = var.subscribers
+  sqs_dlq_enabled    = false
+  kms_master_key_id  = var.encryption_enabled ? module.kms_key[0].key_id : ""
+  encryption_enabled = var.encryption_enabled
 
   attributes = concat(module.this.attributes, ["guardduty"])
   context    = module.this.context
@@ -48,7 +103,7 @@ data "aws_iam_policy_document" "sns_topic_policy" {
     ]
     principals {
       type        = "Service"
-      identifiers = ["cloudwatch.amazonaws.com"]
+      identifiers = ["events.amazonaws.com"]
     }
     resources = [module.sns_topic[0].sns_topic.arn]
     effect    = "Allow"
@@ -86,5 +141,6 @@ locals {
   enable_cloudwatch         = module.this.enabled && (var.enable_cloudwatch || local.enable_notifications)
   enable_notifications      = module.this.enabled && (var.create_sns_topic || var.findings_notification_arn != null)
   create_sns_topic          = module.this.enabled && var.create_sns_topic
+  encryption_enabled        = module.this.enabled && var.encryption_enabled
   findings_notification_arn = local.enable_notifications ? (var.findings_notification_arn != null ? var.findings_notification_arn : module.sns_topic[0].sns_topic.arn) : null
 }

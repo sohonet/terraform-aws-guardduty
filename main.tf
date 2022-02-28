@@ -72,7 +72,7 @@ module "sns_topic" {
 
   subscribers        = var.subscribers
   sqs_dlq_enabled    = false
-  kms_master_key_id  = var.encryption_enabled ? module.kms_key.key_id[0] : ""
+  kms_master_key_id  = var.encryption_enabled ? module.kms_key[0].key_id : ""
   encryption_enabled = var.encryption_enabled
 
   attributes = concat(module.this.attributes, ["guardduty"])

@@ -12,6 +12,7 @@ data "aws_caller_identity" "current" {}
 # Add KMS Key for SNS Topic
 #-----------------------------------------------------------------------------------------------------------------------
 data "aws_iam_policy_document" "kms_key_iam_policy_document" {
+  count = local.encryption_enabled ? 1 : 0
 
   /* Default policy to grant IAM root account full access to manage the key */
   statement {
@@ -45,6 +46,8 @@ data "aws_iam_policy_document" "kms_key_iam_policy_document" {
 }
 
 module "kms_key" {
+  count = local.encryption_enabled ? 1 : 0
+
   source  = "cloudposse/kms-key/aws"
   version = "0.11.0"
 
@@ -67,9 +70,10 @@ module "sns_topic" {
   version = "0.20.1"
   count   = local.create_sns_topic ? 1 : 0
 
-  subscribers       = var.subscribers
-  sqs_dlq_enabled   = false
-  kms_master_key_id = module.kms_key.key_id
+  subscribers        = var.subscribers
+  sqs_dlq_enabled    = false
+  kms_master_key_id  = var.encryption_enabled ? module.kms_key.key_id : ""
+  encryption_enabled = var.encryption_enabled
 
   attributes = concat(module.this.attributes, ["guardduty"])
   context    = module.this.context
@@ -137,5 +141,6 @@ locals {
   enable_cloudwatch         = module.this.enabled && (var.enable_cloudwatch || local.enable_notifications)
   enable_notifications      = module.this.enabled && (var.create_sns_topic || var.findings_notification_arn != null)
   create_sns_topic          = module.this.enabled && var.create_sns_topic
+  encryption_enabled        = module.this.enabled && var.encryption_enabled
   findings_notification_arn = local.enable_notifications ? (var.findings_notification_arn != null ? var.findings_notification_arn : module.sns_topic[0].sns_topic.arn) : null
 }

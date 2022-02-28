@@ -81,3 +81,9 @@ variable "finding_publishing_frequency" {
   type        = string
   default     = null
 }
+
+variable "encryption_enabled" {
+  type        = bool
+  description = "Whether or not to use encryption for SNS Topic. If set to `true` a KMS key will be generated with a limited policy."
+  default     = true
+}

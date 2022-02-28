@@ -56,7 +56,7 @@ module "kms_key" {
   deletion_window_in_days = 10
   enable_key_rotation     = true
   alias                   = "alias/guardduty-sns"
-  policy                  = data.aws_iam_policy_document.kms_key_iam_policy_document.json
+  policy                  = data.aws_iam_policy_document.kms_key_iam_policy_document[0].json
 }
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -72,7 +72,7 @@ module "sns_topic" {
 
   subscribers        = var.subscribers
   sqs_dlq_enabled    = false
-  kms_master_key_id  = var.encryption_enabled ? module.kms_key.key_id : ""
+  kms_master_key_id  = var.encryption_enabled ? module.kms_key.key_id[0] : ""
   encryption_enabled = var.encryption_enabled
 
   attributes = concat(module.this.attributes, ["guardduty"])

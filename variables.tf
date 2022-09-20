@@ -95,7 +95,7 @@ variable "s3_protection_enabled" {
   https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_detector
   DOC
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "kubernetes_protection_enabled" {

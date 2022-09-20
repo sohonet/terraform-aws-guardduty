@@ -87,3 +87,33 @@ variable "encryption_enabled" {
   description = "Whether or not to use encryption for SNS Topic. If set to `true` a KMS key will be generated with a limited policy."
   default     = true
 }
+
+variable "s3_protection_enabled" {
+  description = <<-DOC
+  Flag to indicate whether S3 protection will be turned on in GuardDuty.
+  For more information, see:
+  https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_detector
+  DOC
+  type        = bool
+  default     = false
+}
+
+variable "kubernetes_protection_enabled" {
+  description = <<-DOC
+  Flag to indicate whether Kubernetes protection will be turned on in GuardDuty.
+  For more information, see:
+  https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_detector
+  DOC
+  type        = bool
+  default     = false
+}
+
+variable "malware_protection_enabled" {
+  description = <<-DOC
+  Configure whether scanning EBS volumes is enabled as data source for the detector for instances with findings.
+  For more information, see:
+  https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_detector
+  DOC
+  type        = bool
+  default     = true
+}

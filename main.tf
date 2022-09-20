@@ -4,6 +4,24 @@
 resource "aws_guardduty_detector" "guardduty" {
   enable                       = module.this.enabled
   finding_publishing_frequency = var.finding_publishing_frequency
+
+  datasources {
+    s3_logs {
+      enable = var.s3_protection_enabled
+    }
+    kubernetes {
+      audit_logs {
+        enable = var.kubernetes_protection_enabled
+      }
+    }
+    malware_protection {
+      scan_ec2_instance_with_findings {
+        ebs_volumes {
+          enable = var.malware_protection_enabled
+        }
+      }
+    }
+  }
 }
 
 data "aws_caller_identity" "current" {}

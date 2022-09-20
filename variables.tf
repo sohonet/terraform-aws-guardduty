@@ -110,7 +110,7 @@ variable "kubernetes_protection_enabled" {
 
 variable "malware_protection_enabled" {
   description = <<-DOC
-  Flag to indicate whether snapshots are retained when malware is detected.
+  Configure whether scanning EBS volumes is enabled as data source for the detector for instances with findings.
   For more information, see:
   https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/guardduty_detector
   DOC

@@ -3,6 +3,11 @@ output "guardduty_detector" {
   value       = module.this.enabled ? aws_guardduty_detector.guardduty : null
 }
 
+output "guardduty_detector_id" {
+  description = "GuardDuty detector ID"
+  value       = module.this.enabled ? aws_guardduty_detector.guardduty.id : null
+}
+
 output "sns_topic" {
   description = "SNS topic"
   value       = local.create_sns_topic ? module.sns_topic[0].sns_topic : null
